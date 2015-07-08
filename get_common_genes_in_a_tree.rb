@@ -8,6 +8,7 @@ require 'bio'
 tree_file = nil
 gene_info_file = nil
 target_taxon = nil
+is_OTU_bootstrap = false
 
 target_node = nil
 other_nodes = Array.new
@@ -32,6 +33,7 @@ opts = GetoptLong.new(
   ['-t', '--tree', GetoptLong::REQUIRED_ARGUMENT],
   ['-g', '--gene', '--gene_table', '--gene_info', GetoptLong::REQUIRED_ARGUMENT],
   ['--target', GetoptLong::REQUIRED_ARGUMENT],
+  ['--OTU_bootstrap', GetoptLong::NO_ARGUMENT],
 )
 
 opts.each do |opt, value|
@@ -42,6 +44,8 @@ opts.each do |opt, value|
       gene_info_file = value
     when '--target'
       target_taxon = value
+    when '--OTU_bootstrap'
+      is_OTU_bootstrap = true
   end
 end
 
@@ -59,7 +63,7 @@ gene_info = get_gene_info(gene_info_file)
 
 treeio = Bio::FlatFile.open(Bio::Newick, tree_file)
 tree = treeio.next_entry.tree
-#tree.options[:bootstrap_style] = :disabled
+tree.options[:bootstrap_style] = :disabled
 
 tree.each_node {|x| other_nodes.push(x)}
 nodes = tree.nodes
@@ -70,7 +74,6 @@ nodes.each do |node|
   end
 end
 
-p target_node
 other_nodes.each do |other_node|
   next if other_node.name !~ /\w/
   #puts other_node
@@ -79,24 +82,33 @@ other_nodes.each do |other_node|
   #puts "#######"
 end
 
-puts other_nodes.map{|i|i.name}.join("\t")
+
+#puts other_nodes.map{|i|i.name}.join("\t")
+
 
 other_nodes.each do |node|
   #tree.descendents(i).each{|x| print x.name.to_s}; puts
+  if is_OTU_bootstrap
+    if node.name =~ /\w/
+      p tree.adjacent_nodes(node)
+      node.bootstrap = "#"+(gene_info[target_taxon] & gene_info[node.name]).size.to_s
+    end
+  end
   next if node.name =~ /\w/
   node_ancestral_genes = Array.new
-  puts ["node:", node.name].join("\t")
+  #puts ["node:", node.name].join("\t")
   tree.descendents(node).each do |sub_node|
     next if sub_node.name !~ /\w/
+    next if sub_node.name == target_taxon
     node_ancestral_genes |= gene_info[target_taxon] & gene_info[sub_node.name]
     #p tree.children(node)
   end
-  puts tree.descendents(node).find_all{|i|i.name=~/\w/}.map{|i|i.name}.join("\t")
-  puts node_ancestral_genes.join("\t")
+  #puts tree.descendents(node).find_all{|i|i.name=~/\w/}.map{|i|i.name}.join("\t")
+  #puts node_ancestral_genes.join("\t")
   node.bootstrap = node_ancestral_genes.size
-  p "###"
   #print tree.adjacent_nodes(i); print "\t"
 end
+
 
 output = tree.output_newick
 output.gsub!(/[\n\s]/, '')
