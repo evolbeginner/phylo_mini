@@ -331,6 +331,8 @@ tree.nodes.each do |node|
   elsif is_prop
     length = (node.bootstrap - parent_node.bootstrap)/[node.bootstrap, parent_node.bootstrap].max.to_f
   elsif is_no_change_length
+    next if tree.get_edge(node, parent_node).distance.nil?
+    #tree.get_edge(node, parent_node).distance *= 10
     next
   end
   if is_rate

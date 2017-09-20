@@ -6,6 +6,8 @@ otu_name_hash={}
 p=1
 tree_file = ARGV[0]
 
+
+##############################################################
 fh = File.open(tree_file, 'r')
 while(line=fh.gets) do
   line=line.chomp
