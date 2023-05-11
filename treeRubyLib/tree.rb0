@@ -1,0 +1,97 @@
+require 'bio'
+
+
+class Bio::Tree
+  DELIMITER = ';'
+  attr_accessor :tip2index
+
+  def tips(node)
+    descendents(node).select{|n|children(n).empty?}
+  end
+
+  def internal_nodes
+    a = Array.new
+    nodes.each do |node|
+      if not node.isTip?(self)
+        a << node
+      end
+    end
+    return(a)
+  end
+
+  def allTips
+    a = Array.new
+    nodes.each do |node|
+      a << node if node.isTip?(self)
+    end
+    return(a)
+  end
+
+  def outputNexus(isTranslate=false, isTip2Index=false)
+    puts "#NEXUS"
+    puts
+    puts "BEGIN TREES;"
+    translate if isTranslate
+    tipToIndex and newickTipToIndex if isTip2Index
+    puts ["\t"+'TREE TREE1', cleanNewick()].join('= ')
+    puts ['ENDBLOCK', DELIMITER].join('')
+  end
+
+  def cleanNewick
+    output = output_newick
+    output.gsub!(/[\n\s]/, '')
+    return(output)
+  end
+
+  def tipToIndex
+    @tip2index = Hash.new
+    allTips.each_with_index do |tip, index|
+      @tip2index[tip.name.gsub(' ','_')] = index
+    end
+  end
+
+  def newickTipToIndex()
+    tipToIndex
+    allTips.each do |tip|
+      index = @tip2index[tip.name.gsub!(' ', '_')]
+      tip.name = index+1
+    end
+  end
+
+  private
+  def translate
+    #  TRANSLATE
+    #    1	Hamster,
+    puts "\tTRANSLATE"
+    allTips.each_with_index do |tip, index|
+      puts ["\t\t"+(index+1).to_s, tip.name.gsub(' ','_')+','].join("\t")
+    end
+    puts ["\t\t"+DELIMITER].join("\t")
+  end
+end
+
+
+############################################################################
+class Bio::Tree::Node
+  def isTip?(tree)
+    rv = tree.children(self).empty? ? true : false     
+    return(rv)
+  end
+end
+
+
+############################################################################
+def getTreeObjs(tree_file)
+  trees = Array.new
+
+  treeio = Bio::FlatFile.open(Bio::Newick, tree_file)
+  while newick = treeio.next_entry
+    tree = newick.tree
+    tree.options[:bootstrap_style] = :traditional
+    next if tree.nodes.empty?
+    trees << tree
+  end
+  return(trees)
+end
+
+
