@@ -1,4 +1,4 @@
-#! /bin/env ruby
+#! /usr/bin/env ruby
 # use abbreviation to replace the name of taxa names in a tree
 
 ##############################################################

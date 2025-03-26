@@ -31,6 +31,7 @@ bootstrap_min = -10000
 bootstrap_style = :traditional
 name_bootstrap_style = nil
 bl_times = 1
+bl_add = 0
 bl_scale = nil
 bs_times = 1
 bl_min = 0
@@ -119,6 +120,7 @@ opts = GetoptLong.new(
   ['--no_b', GetoptLong::NO_ARGUMENT],
   ['--name_bootstrap', GetoptLong::REQUIRED_ARGUMENT],
   ['--bl_times', GetoptLong::REQUIRED_ARGUMENT],
+  ['--bl_add', GetoptLong::REQUIRED_ARGUMENT],
   ['--bl_scale', GetoptLong::REQUIRED_ARGUMENT],
   ['--bs_times', GetoptLong::REQUIRED_ARGUMENT],
   ['--bl_min', GetoptLong::REQUIRED_ARGUMENT],
@@ -147,6 +149,8 @@ opts.each do |opt, value|
       name_bootstrap_style = value.to_sym
     when /--bl_times/
       bl_times = value.to_f
+    when /--bl_add/
+      bl_add = value.to_f
     when /--bl_scale/
       bl_scale = value
     when /--bs_times/
@@ -242,7 +246,7 @@ trees.each do |tree|
 
   tree.each_edge do |node0, node1, edge|
     next if edge.distance.to_s !~ /\d/
-    edge.distance = edge.distance + bl_min if edge.distance < bl_min
+    edge.distance = bl_min if edge.distance < bl_min
     edge.distance = edge.distance * bl_times
     edge.distance = edge.distance * [norm_distr.rng(), 0.1].max if not bl_scale.nil? # scale bl with a norm distr
     edge.distance = 1 if is_bl_one
